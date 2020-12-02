@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mitmproxy
+  labels:
+    app: mitmproxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mitmproxy
+  template:
+    metadata:
+      labels:
+        app: mitmproxy
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - mitmproxy
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: mitmproxy
+          image: mitmproxy/mitmproxy
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          command: ["mitmweb"]
+          args: ["--web-host", "0.0.0.0"]

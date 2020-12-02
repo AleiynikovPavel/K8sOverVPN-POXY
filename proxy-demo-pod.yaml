@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: proxy-demo
+  labels:                                
+    app: proxy-demo
+spec:
+  containers:
+  - name: proxy-demo-container
+    image: puvel/test-proxy:0.1
+    env:
+    - name: MY_PROXY_URL
+      value: "proxy-service.default.svc.cluster.local"
+    - name: MY_PROXY_PORT
+      value: "8080"

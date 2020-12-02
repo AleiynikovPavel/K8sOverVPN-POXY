@@ -1,0 +1,89 @@
+# Докер
+apt update
+apt  -y install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+
+curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+apt-key fingerprint 0EBFCD88
+add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/debian \
+   $(lsb_release -cs) \
+   stable"
+apt update
+apt -y install docker-ce docker-ce-cli containerd.io
+#sudo usermod -aG docker debianmaster
+
+# Отключаем swap
+swapoff --all
+nano /etc/fstab
+
+# Обновление всех пакетов
+apt update && apt -y upgrade
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+apt-get update
+apt -y install kubectl kubeadm kubelet
+
+nano /etc/systemd/system/kubelet.service.d/10-kubeadm.conf 
+--node-ip=10.8.0.1
+--node-ip=10.8.0.2
+
+kubeadm reset
+
+systemctl enable kubelet
+
+
+#Запуск мастера
+kubeadm init --apiserver-advertise-address=10.8.0.1 --pod-network-cidr=10.244.0.0/16
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+nano flannel.ymal
+
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.4/aio/deploy/recommended.yaml
+kubectl get service --all-namespaces
+kubectl patch svc kubernetes-dashboard --namespace=kubernetes-dashboard  --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+
+kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
+
+
+
+curl --proxy http://127.0.0.1:32197 http://api.ipify.org?format=json
+
+curl --proxy http://web.default.svc.cluster.local:8080/ http://api.ipify.org?format=json
+
+
+
+
+kubeadm token generate
+kubeadm token create ry6mo5.eh9df5ej52hn9sft --print-join-command --ttl=0

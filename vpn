@@ -1,0 +1,40 @@
+#ssh -o ServerAliveInterval=60 master@192.168.0.84
+wget https://git.io/vpn -O openvpn-install.sh
+su -
+. openvpn-install.sh
+
+
+
+ssh -o ServerAliveInterval=60 node3@192.168.0.98 -p 22 
+# node 3
+apt update
+apt install openvpn
+openvpn --config client.conf
+cp client.conf  /etc/openvpn/
+Вставить
+script-security 2
+up run-stuff-after-vpn-connect.sh
+####### в client.conf
+nano run-stuff-after-vpn-connect.sh
+####### вставить
+#!/bin/sh
+ip route add 10.8.0.0/24 via 10.8.0.3
+
+systemctl enable openvpn@client.service
+systemctl daemon-reload
+service openvpn@client start
+ip rout
+
+# master
+nano /etc/openvpn/server/server.conf
+client-config-dir ccd
+systemctl restart openvpn-server@server.service 
+mkdir ccd
+cd ccd/
+nano node3
+ifconfig-push 10.8.0.2 255.255.255.255
+
+
+
+
+
